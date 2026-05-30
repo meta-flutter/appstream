@@ -1,3 +1,18 @@
+## 0.2.2
+
+- Cross-compile support in the native asset build hook (`hook/build.dart`):
+  when a `cmake_toolchain_file` and/or `cross_compile_env` user_define is
+  supplied (e.g. by a Yocto/OE SDK image build), the hook drives
+  `CMakeLists.txt` with the cross toolchain instead of `CBuilder`, re-exporting
+  the toolchain environment that the Dart hooks runner otherwise strips. Host
+  builds are unchanged. See [DEVELOPMENT.md](DEVELOPMENT.md).
+- `skip_native_build` user_define makes the hook a no-op, for build systems
+  (e.g. a bitbake recipe using `cmake.bbclass`) that compile `libappstream.so`
+  themselves
+- `CMakeLists.txt`: add `APPSTREAM_LIB_OUTPUT_DIR` (redirect the built
+  `libappstream.so` out of the source tree) and `APPSTREAM_BUILD_TESTS`
+  (skip the GoogleTest fetch/build for cross/SDK builds) options
+
 ## 0.2.1
 
 - Add `std::expected` polyfill for Clang 18 (Flutter's default Linux

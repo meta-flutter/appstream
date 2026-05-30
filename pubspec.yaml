@@ -3,7 +3,7 @@ description: >-
   High-performance AppStream XML parser with C++23 FFI bridge. Parses Flathub
   catalog metadata into SQLite with Drift ORM, multi-language translations,
   FTS5 search, and streaming progress events.
-version: 0.2.0
+version: 0.2.2
 repository: https://github.com/meta-flutter/appstream
 topics:
   - appstream
@@ -19,6 +19,7 @@ environment:
   sdk: ^3.10.0
 
 dependencies:
+  code_assets: ^1.0.0
   drift: ^2.22.0
   ffi: ^2.1.0
   hooks: ^1.0.2

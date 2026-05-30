@@ -8,8 +8,15 @@ project(appstream
 # ── Build options ──────────────────────────────────────────────────────────
 option(ENABLE_COVERAGE "Enable code coverage with gcov/lcov" OFF)
 option(ENABLE_BENCHMARKS "Build performance benchmark tests" OFF)
+option(APPSTREAM_BUILD_TESTS "Build the C++ unit tests (pulls in GoogleTest)" ON)
 set(ENABLE_SANITIZER "none" CACHE STRING "Sanitizer: none|asan|msan|ubsan")
 set_property(CACHE ENABLE_SANITIZER PROPERTY STRINGS none asan msan ubsan)
+
+# Where libappstream.so is written. Defaults to the in-tree lib/ dir for
+# local development; the native-assets build hook overrides this to its
+# per-build output directory so nothing is written back into the source tree.
+set(APPSTREAM_LIB_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/lib"
+    CACHE PATH "Output directory for the libappstream shared library")
 
 # ── Compiler settings ──────────────────────────────────────────────────────
 set(CMAKE_CXX_STANDARD 23)
@@ -66,11 +73,16 @@ target_compile_options(appstream PRIVATE -O2 -fvisibility=hidden)
 target_link_libraries(appstream PRIVATE appstream_core)
 set_target_properties(appstream PROPERTIES
     OUTPUT_NAME "appstream"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib"
+    LIBRARY_OUTPUT_DIRECTORY "${APPSTREAM_LIB_OUTPUT_DIR}"
 )
 
 # ── Tests ──────────────────────────────────────────────────────────────────
-include(CTest)
-enable_testing()
-add_subdirectory(tests)
+# Skipped for cross/SDK builds (-DAPPSTREAM_BUILD_TESTS=OFF), which have no
+# need for the test binary and may lack network access for GoogleTest's
+# FetchContent fallback.
+if(APPSTREAM_BUILD_TESTS)
+    include(CTest)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
 
