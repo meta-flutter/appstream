@@ -19,8 +19,15 @@ void main(List<String> args) async {
   await build(args, (input, output) async {
     if (!input.config.buildCodeAssets) return;
 
-    if (Platform.environment.containsKey('SKIP_NATIVE_BUILD')) {
-      stderr.writeln('SKIP_NATIVE_BUILD set — skipping native build.');
+    // Allow the embedder/build system to suppress the in-hook native build via
+    // a hooks user-define (e.g. an OpenEmbedded/Yocto recipe that builds
+    // libappstream.so itself with the cross toolchain). Dart runs hooks in a
+    // hermetic environment, so an environment variable would not reach here;
+    // user-defines from the workspace pubspec.yaml are passed to hooks.
+    if (input.userDefines['skip_native_build'] == true) {
+      stderr.writeln(
+        'skip_native_build user-define set — skipping native build.',
+      );
       return;
     }
 
