@@ -29,17 +29,14 @@ BENCHMARKS="${BENCHMARKS:-OFF}"
 
 if [[ -z "${SKIP_CXX:-}" ]]; then
   echo "=== Configuring CMake ($BUILD_TYPE) ==="
-  GEN_ARGS=()
-  if command -v ninja >/dev/null 2>&1; then
-    GEN_ARGS+=(-G Ninja)
-  fi
-  cmake -S . -B "$BUILD_DIR" \
-    "${GEN_ARGS[@]}" \
-    -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
-    -DAPPSTREAM_BUILD_TESTS=ON \
-    -DENABLE_SANITIZER="$SANITIZER" \
-    -DENABLE_COVERAGE="$COVERAGE" \
-    -DENABLE_BENCHMARKS="$BENCHMARKS"
+  # Flags live in scripts/configure.sh so this script and CI cannot drift.
+  ./scripts/configure.sh \
+    --build-dir "$BUILD_DIR" \
+    --build-type "$BUILD_TYPE" \
+    --tests ON \
+    --sanitizer "$SANITIZER" \
+    --coverage "$COVERAGE" \
+    --benchmarks "$BENCHMARKS"
 
   echo "=== Building C++ targets ==="
   cmake --build "$BUILD_DIR" --parallel
