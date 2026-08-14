@@ -34,7 +34,7 @@ static int convertToInt(const std::string_view sv) {
   for (; i < sv.size(); ++i) {
     if (sv[i] < '0' || sv[i] > '9')
       break;
-    result = result * 10 + (sv[i] - '0');
+    result = (result * 10) + (sv[i] - '0');
   }
   return neg ? -result : result;
 }
@@ -44,7 +44,7 @@ static size_t convertToSizeT(const std::string_view sv) {
   for (const char c : sv) {
     if (c < '0' || c > '9')
       break;
-    result = result * 10 + static_cast<size_t>(c - '0');
+    result = (result * 10) + static_cast<size_t>(c - '0');
   }
   return result;
 }
@@ -54,7 +54,7 @@ static std::string unixEpochToISO8601(const std::string_view epochStr) {
   for (char c : epochStr) {
     if (c < '0' || c > '9')
       break;
-    epoch = epoch * 10 + (c - '0');
+    epoch = (epoch * 10) + (c - '0');
   }
   const auto t = static_cast<std::time_t>(epoch);
   std::tm tm{};
@@ -76,7 +76,7 @@ void AppStreamParser::mmapFile(const std::string &filename, void *&data, size_t 
     spdlog::error("Failed to open: {}", filename);
     return;
   }
-  struct stat sb {};
+  struct stat sb{};
   if (fstat(fd, &sb) == -1) {
     close(fd);
     return;
@@ -751,20 +751,21 @@ AppStreamParser::doParse(XmlScanner &scanner, const std::string &language, Compo
         break;
       }
       if (insideProvides) {
-        if (tag == "binary"sv)
+        if (tag == "binary"sv) {
           currentComponent.provides.binaries.push_back(std::move(textAccum));
-        else if (tag == "library"sv)
+        } else if (tag == "library"sv) {
           currentComponent.provides.libraries.push_back(std::move(textAccum));
-        else if (tag == "mediatype"sv)
+        } else if (tag == "mediatype"sv) {
           currentComponent.provides.mediatypes.push_back(std::move(textAccum));
-        else if (tag == "id"sv)
+        } else if (tag == "id"sv) {
           currentComponent.provides.ids.push_back(std::move(textAccum));
-        else if (tag == "dbus"sv) {
+        } else if (tag == "dbus"sv) {
           currentComponent.provides.dbus.emplace_back(std::move(currentDbusType),
                                                       std::move(textAccum));
           currentDbusType.clear();
-        } else if (tag == "firmware"sv)
+        } else if (tag == "firmware"sv) {
           currentComponent.provides.firmware.push_back(std::move(textAccum));
+        }
         currentElement.clear();
         textAccum.clear();
         break;

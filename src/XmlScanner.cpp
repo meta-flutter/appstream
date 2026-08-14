@@ -113,7 +113,7 @@ void XmlScanner::skipComment() {
 }
 
 bool XmlScanner::containsEntity(std::string_view sv) noexcept {
-  return sv.find('&') != std::string_view::npos;
+  return sv.contains('&');
 }
 
 void XmlScanner::decodeEntities(std::string_view src) {
@@ -157,11 +157,11 @@ void XmlScanner::decodeEntities(std::string_view src) {
         for (size_t i = 2; i < entity.size() && valid; ++i) {
           char c = entity[i];
           if (c >= '0' && c <= '9')
-            cp = cp * 16 + static_cast<unsigned long>(c - '0');
+            cp = (cp * 16) + static_cast<unsigned long>(c - '0');
           else if (c >= 'a' && c <= 'f')
-            cp = cp * 16 + static_cast<unsigned long>(c - 'a' + 10);
+            cp = (cp * 16) + static_cast<unsigned long>(c - 'a' + 10);
           else if (c >= 'A' && c <= 'F')
-            cp = cp * 16 + static_cast<unsigned long>(c - 'A' + 10);
+            cp = (cp * 16) + static_cast<unsigned long>(c - 'A' + 10);
           else
             valid = false;
           if (cp > 0x10FFFF)
@@ -170,7 +170,7 @@ void XmlScanner::decodeEntities(std::string_view src) {
       } else {
         for (size_t i = 1; i < entity.size() && valid; ++i) {
           if (entity[i] >= '0' && entity[i] <= '9')
-            cp = cp * 10 + static_cast<unsigned long>(entity[i] - '0');
+            cp = (cp * 10) + static_cast<unsigned long>(entity[i] - '0');
           else
             valid = false;
           if (cp > 0x10FFFF)

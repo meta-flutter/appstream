@@ -5,7 +5,21 @@
   `THIRD_PARTY_LICENSES` cataloging every direct dependency.
 - LICENSE file replaced with the compact SPDX-standard Apache-2.0 text.
 - Dependency bumps: `sqlite3` ^2.4.0 → ^3.3.1, `lints` ^4.0.0 → ^6.1.0
-  (applies to both the main package and the Flutter example).
+  (applies to both the main package and the Flutter example),
+  `hooks` ^1.0.2 → ^2.1.0 and `code_assets` ^1.0.0 → ^1.2.1. The build
+  hook API is unchanged between `hooks` 1.x and 2.x, so `hook/build.dart`
+  needed no edits; the bump also unpins `native_toolchain_c` and
+  `record_use` from their 1.x-era versions.
+- Repository moved to `github.com/flatpak-minimal/appstream_dart`;
+  `repository` and `issue_tracker` updated to match.
+- Fix `scripts/test.sh` passing `-DBUILD_TESTING=ON`, which the CMake build
+  ignores — the gate has been `-DAPPSTREAM_BUILD_TESTS=ON` since 0.2.2. The
+  C++ suite was therefore never configured or rebuilt, and `ctest` silently
+  ran whatever stale binary was left in the build directory.
+- clang-tidy cleanups in `AppStreamParser` and `XmlScanner`: explicit
+  parentheses in mixed `*`/`+` accumulator arithmetic, `contains()` in place
+  of a `find() != npos` membership test, and consistent braces across the
+  `provides` if/else chain.
 - Public API documentation: add dartdoc comments to all exported classes,
   fields, and constructors in `lib/appstream.dart`,
   `lib/src/database/database.dart`, and `lib/src/database/tables.dart`.
