@@ -240,8 +240,23 @@ reaches the same verdict as CI on any machine. CI runs this same script,
 and the list of files to format lives in it rather than being duplicated
 into the workflow.
 
-Run `clang-tidy` *before* formatting, never after — it reports line numbers
-against the unformatted tree.
+### Static analysis
+
+```bash
+./scripts/tidy.sh          # analyze, non-zero exit on any diagnostic
+./scripts/tidy.sh --fix    # apply the fixes clang-tidy considers safe
+```
+
+clang-tidy is pinned for the same reason as the formatters, and the
+differences between versions are not cosmetic: the version shipped by some
+distributions cannot parse a current libstdc++ and stops early, and older
+versions report a `bugprone-use-after-move` false positive on `x = {}`
+immediately after `std::move(x)`, which is the documented way to restore a
+moved-from object. `scripts/tidy.sh` downloads the pinned version into
+`.cache/` when your installed one differs, and CI runs the same script.
+
+Run `scripts/tidy.sh` *before* formatting, never after — it reports line
+numbers against the unformatted tree.
 
 ## Multi-Language Support
 

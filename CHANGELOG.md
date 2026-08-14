@@ -1,3 +1,29 @@
+## 0.4.2
+
+- Fix undefined behavior parsing untrusted catalog data. The digit
+  accumulators in `AppStreamParser` computed `result * 10 + digit` with no
+  bound, so a long enough run of digits overflowed. Signed overflow is
+  undefined behavior, and UBSan confirmed it on two reachable paths:
+  `<release timestamp="999...">` overflowing `long long`, and
+  `<icon width="999...">` overflowing `int`. Both values come from an
+  attribute in a catalog fetched over the network. The same helper also
+  feeds `priority`, image and video dimensions, and icon scale.
+  Accumulation now saturates, so a hostile value is clamped rather than
+  wrapped. Regression tests cover both inputs.
+- Check the `gmtime_r` return value in `unixEpochToISO8601`. It returns null
+  for a `time_t` it cannot represent, which a saturated epoch reaches;
+  ignoring it left the `std::tm` zero-initialized and silently produced a
+  `1900-01-01T00:00:00Z` timestamp. An unrepresentable epoch now yields no
+  timestamp.
+- Add `scripts/tidy.sh`, pinning clang-tidy the way `scripts/format.sh` pins
+  clang-format, and make the CI clang-tidy job blocking rather than
+  advisory. The unpinned checker gave results that depended on which LLVM
+  happened to be first on `PATH`: the version CI installed could not parse a
+  current libstdc++ and bailed early, while also emitting a
+  `bugprone-use-after-move` false positive on `x = {}` immediately after
+  `std::move(x)`. The pinned version is what found the `gmtime_r` defect
+  above.
+
 ## 0.4.1
 
 - Restore Flutter compatibility, which 0.4.0 broke. `hooks` ^2.1.0 requires

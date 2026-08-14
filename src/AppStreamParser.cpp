@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cassert>
 #include <iomanip>
+#include <limits>
 #include <ranges>
 #include <sstream>
 #include <unordered_set>
@@ -23,42 +24,48 @@ using namespace std::string_view_literals;
 // Helpers
 // ============================================================
 
-static int convertToInt(const std::string_view sv) {
-  int result = 0;
-  bool neg = false;
-  size_t i = 0;
-  if (!sv.empty() && sv[0] == '-') {
-    neg = true;
-    i = 1;
-  }
-  for (; i < sv.size(); ++i) {
-    if (sv[i] < '0' || sv[i] > '9')
-      break;
-    result = (result * 10) + (sv[i] - '0');
-  }
-  return neg ? -result : result;
-}
-
-static size_t convertToSizeT(const std::string_view sv) {
-  size_t result = 0;
+// Digit accumulation saturates instead of wrapping.
+//
+// Every caller below is fed an attribute value or element text straight out
+// of the catalog XML, which is downloaded over the network and is not
+// trusted. The previous `result = result * 10 + digit` overflowed on a long
+// enough digit run: signed overflow is undefined behavior, and UBSan
+// confirmed it fired on `<release timestamp="999...">` and
+// `<icon width="999...">`. Saturating keeps the parse total — a nonsense
+// dimension becomes a clamped one rather than a miscompile.
+template <typename T> static T accumulateDigits(const std::string_view sv) {
+  constexpr T kMax = std::numeric_limits<T>::max();
+  T result = 0;
   for (const char c : sv) {
     if (c < '0' || c > '9')
       break;
-    result = (result * 10) + static_cast<size_t>(c - '0');
+    const auto digit = static_cast<T>(c - '0');
+    if (result > (kMax - digit) / 10)
+      return kMax;
+    result = (result * 10) + digit;
   }
   return result;
 }
 
+static int convertToInt(const std::string_view sv) {
+  const bool neg = !sv.empty() && sv[0] == '-';
+  const int magnitude = accumulateDigits<int>(neg ? sv.substr(1) : sv);
+  return neg ? -magnitude : magnitude;
+}
+
+static size_t convertToSizeT(const std::string_view sv) {
+  return accumulateDigits<size_t>(sv);
+}
+
 static std::string unixEpochToISO8601(const std::string_view epochStr) {
-  long long epoch = 0;
-  for (char c : epochStr) {
-    if (c < '0' || c > '9')
-      break;
-    epoch = (epoch * 10) + (c - '0');
-  }
+  const auto epoch = accumulateDigits<long long>(epochStr);
   const auto t = static_cast<std::time_t>(epoch);
   std::tm tm{};
-  gmtime_r(&t, &tm);
+  // gmtime_r returns null for a time_t it cannot represent, which a
+  // saturated epoch reaches. Ignoring it left tm zero-initialized and
+  // silently produced a 1900-01-01 timestamp; report no timestamp instead.
+  if (gmtime_r(&t, &tm) == nullptr)
+    return {};
   std::stringstream ss;
   ss << std::put_time(&tm, "%Y-%m-%dT%H:%M:%S") << 'Z';
   return ss.str();
