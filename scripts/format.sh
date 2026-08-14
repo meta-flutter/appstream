@@ -89,12 +89,30 @@ resolve_clang_format() {
 format_cxx() {
   local cf
   cf="$(resolve_clang_format)"
-  echo "=== clang-format $("$cf" --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+') ($cf) ==="
+  # head -1: distro version strings repeat the number, e.g.
+  # "clang-format version 18.1.8 (Fedora 18.1.8-4.fc44)".
+  echo "=== clang-format $("$cf" --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1) ($cf) ==="
 
   local find_args=()
   for pattern in "${CXX_EXCLUDES[@]}"; do
     find_args+=(-not -name "$pattern*")
   done
+
+  # Fail loudly on a missing directory rather than formatting a subset.
+  # find reports the error and carries on with the directories that do
+  # exist, and its non-zero status is swallowed by the pipeline, so a
+  # renamed directory would silently drop out of coverage — precisely how
+  # native_tests/ went unformatted for three releases after tests/ was
+  # renamed. A non-empty result is not evidence that everything was seen.
+  local missing=()
+  for d in "${CXX_DIRS[@]}"; do
+    [[ -d "$d" ]] || missing+=("$d")
+  done
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    echo "error: configured C++ directories do not exist: ${missing[*]}" >&2
+    echo "       Update CXX_DIRS in scripts/format.sh." >&2
+    return 1
+  fi
 
   local files=()
   while IFS= read -r -d '' f; do
@@ -127,19 +145,66 @@ resolve_dart() {
     return
   fi
 
-  local root=".cache/dart-sdk/$DART_SDK_VERSION"
+  # The package is Linux-only (see `platforms:` in pubspec.yaml), but the
+  # host architecture still varies. Hardcoding x64 would hand an arm64
+  # developer an SDK that fails with a confusing exec format error.
+  local arch
+  case "$(uname -m)" in
+    x86_64) arch=x64 ;;
+    aarch64 | arm64) arch=arm64 ;;
+    *)
+      echo "error: no pinned Dart SDK for architecture $(uname -m)." >&2
+      echo "       Install Dart $DART_SDK_VERSION manually and put it on PATH." >&2
+      return 1
+      ;;
+  esac
+
+  local root=".cache/dart-sdk/$DART_SDK_VERSION-$arch"
   if [[ ! -x "$root/dart-sdk/bin/dart" ]]; then
-    echo "Provisioning Dart SDK $DART_SDK_VERSION into $root" >&2
+    echo "Provisioning Dart SDK $DART_SDK_VERSION ($arch) into $root" >&2
     mkdir -p "$root"
-    local url="https://storage.googleapis.com/dart-archive/channels/stable/release/$DART_SDK_VERSION/sdk/dartsdk-linux-x64-release.zip"
-    curl -fsSL -o "$root/sdk.zip" "$url" >&2
-    unzip -qo "$root/sdk.zip" -d "$root" >&2
-    rm -f "$root/sdk.zip"
+    local base="https://storage.googleapis.com/dart-archive/channels/stable/release/$DART_SDK_VERSION/sdk"
+    local zip="dartsdk-linux-$arch-release.zip"
+    curl -fsSL -o "$root/$zip" "$base/$zip" >&2
+
+    # Verify before extracting: this archive is about to be executed, and
+    # TLS alone attests to the transport, not to the bytes on the bucket.
+    local expected
+    expected="$(curl -fsSL "$base/$zip.sha256sum" | awk '{print $1}')"
+    if [[ -z "$expected" ]]; then
+      echo "error: could not fetch checksum for $zip" >&2
+      rm -f "$root/$zip"
+      return 1
+    fi
+    local actual
+    actual="$(sha256sum "$root/$zip" | awk '{print $1}')"
+    if [[ "$actual" != "$expected" ]]; then
+      echo "error: checksum mismatch for $zip" >&2
+      echo "       expected $expected" >&2
+      echo "       actual   $actual" >&2
+      rm -f "$root/$zip"
+      return 1
+    fi
+
+    unzip -qo "$root/$zip" -d "$root" >&2
+    rm -f "$root/$zip"
   fi
   echo "$root/dart-sdk/bin/dart"
 }
 
 format_dart() {
+  # Same guard as format_cxx. dart format does error on a missing path, but
+  # checking here keeps the diagnostic identical and the failure early.
+  local missing=()
+  for p in "${DART_PATHS[@]}"; do
+    [[ -e "$p" ]] || missing+=("$p")
+  done
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    echo "error: configured Dart paths do not exist: ${missing[*]}" >&2
+    echo "       Update DART_PATHS in scripts/format.sh." >&2
+    return 1
+  fi
+
   local dart_bin
   dart_bin="$(resolve_dart)"
   echo "=== dart format $("$dart_bin" --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1) ($dart_bin) ==="
