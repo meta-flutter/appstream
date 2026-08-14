@@ -91,8 +91,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clang-tidy cmake ninja-build libsqlite3-dev pkg-config
       - name: Generate compile_commands.json
-        run: |
-          cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBUILD_TESTING=OFF
+        run: scripts/configure.sh --tests OFF --compile-commands
       - name: Run clang-tidy
         run: |
           find src -type f \( -name '*.cpp' -o -name '*.hpp' \) \
@@ -119,11 +118,10 @@ jobs:
           sudo apt-get install -y cmake ninja-build g++ libsqlite3-dev libgtest-dev
       - name: Configure
         run: |
-          cmake -S . -B build -G Ninja \
-            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-            -DBUILD_TESTING=ON \
-            -DAPPSTREAM_BUILD_TESTS=ON \
-            -DENABLE_SANITIZER=${{ matrix.sanitizer }}
+          scripts/configure.sh \
+            --build-type ${{ matrix.build-type }} \
+            --tests ON \
+            --sanitizer ${{ matrix.sanitizer }}
       - name: Build
         run: cmake --build build --parallel
       - name: Test

@@ -19,6 +19,14 @@ catalog.db-wal
 catalog.db-shm
 catalog.db.staging*
 
+# Flutter custom-device staging. Recreated by the device's `install` step
+# (see ~/.config/flutter/custom_devices.json), which copies config.toml and
+# the engine bundle in and symlinks data/flutter_assets at build/. It is
+# generated output, and the engine .so and icudtl.dat alone were 51 MB of
+# tracked binaries.
+.desktop-homescreen/
+.*-homescreen/
+
 # IDE
 .idea/
 .vscode/

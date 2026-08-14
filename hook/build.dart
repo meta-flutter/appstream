@@ -47,7 +47,13 @@ void main(List<String> args) async {
         '-B',
         buildDir,
         '-DCMAKE_BUILD_TYPE=Release',
-        '-DBUILD_TESTING=OFF',
+        // APPSTREAM_BUILD_TESTS, not BUILD_TESTING: the latter is not a
+        // variable this project defines, so CMake ignored it and warned
+        // "Manually-specified variables were not used by the project" on
+        // every Flutter build. The canonical flag list lives in
+        // scripts/configure.sh; this hook cannot call it, because build
+        // hooks run in a hermetic environment without a shell contract.
+        '-DAPPSTREAM_BUILD_TESTS=OFF',
         '-DAPPSTREAM_HOOK_BUILD=ON',
         if (hasNinja) ...['-G', 'Ninja'],
       ]);
