@@ -22,6 +22,12 @@
   a library of their choosing loaded.
 - Correct the comments in `hook/build.dart` and `lib/src/appstream_native.dart`,
   which described the `@Native` mechanism that did not yet exist.
+- Refresh stale facts in the README, which is the pub.dev landing page: the
+  install snippet advertised `^0.2.2`, the status line and test count were
+  three releases old (194 tests, not 185), the project tree was rooted at
+  the pre-rename `appstream/` and listed a `dart_api_dl.c` that is now
+  `.cpp`, and the prerequisites claimed Clang 17+ while the `std::expected`
+  polyfill targets Clang 18.
 
 ## 0.4.0
 
