@@ -147,6 +147,31 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ```
 
+### How the native library is located
+
+`hook/build.dart` publishes `libappstream.so` as a code asset, and the FFI
+symbols are `@Native` externals bound to it, so the Dart VM resolves them
+through its native-asset table. `dart run`, `dart test`, `dart build`, and
+`flutter build linux` all wire this up with no extra work.
+
+The generated `NativeAssetsManifest.json` maps the asset to the plain
+soname `libappstream.so`, which means the final `dlopen` goes through the
+system loader. The standard Flutter Linux runner sets
+`RPATH=$ORIGIN/lib` and bundles the library into `bundle/lib/`, so it is
+found automatically.
+
+Embedders whose executable lives **outside** the application bundle — such
+as ivi-homescreen, where the binary is installed at a system path — do not
+get that RPATH. Ship `libappstream.so` somewhere the loader searches:
+
+```bash
+LD_LIBRARY_PATH=/path/to/bundle/lib homescreen -b /path/to/bundle
+```
+
+Note that `flutter build bundle` does not perform Linux native-asset
+packaging; use `flutter build linux` and take the assets from
+`build/linux/x64/<mode>/bundle/lib/`.
+
 ### Run the CLI
 
 ```bash
