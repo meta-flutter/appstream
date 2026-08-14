@@ -30,13 +30,11 @@ class BenchmarkTimer {
   std::string name_;
 
 public:
-  explicit BenchmarkTimer(const std::string &name)
-      : start_(Clock::now()), name_(name) {}
+  explicit BenchmarkTimer(const std::string &name) : start_(Clock::now()), name_(name) {}
 
   ~BenchmarkTimer() {
     const auto elapsed = Duration(Clock::now() - start_);
-    std::cout << "⏱️  " << name_ << ": " << elapsed.count() << " ms"
-              << std::endl;
+    std::cout << "⏱️  " << name_ << ": " << elapsed.count() << " ms" << std::endl;
   }
 };
 
@@ -70,8 +68,7 @@ protected:
         ss << "    </categories>\n";
       }
 
-      ss << "    <url type=\"homepage\">https://example.com/" << i
-         << "</url>\n";
+      ss << "    <url type=\"homepage\">https://example.com/" << i << "</url>\n";
       ss << "  </component>\n";
     }
 
@@ -126,8 +123,7 @@ TEST_F(PerformanceBenchmark, XmlScannerLargeDocument) {
   auto xml_path = createTempFile(generateXML(COMPONENT_COUNT));
 
   {
-    BenchmarkTimer timer("XmlScanner: Parse " + std::to_string(COMPONENT_COUNT) +
-                         " components");
+    BenchmarkTimer timer("XmlScanner: Parse " + std::to_string(COMPONENT_COUNT) + " components");
 
     int fd = open(xml_path.c_str(), O_RDONLY);
     ASSERT_GE(fd, 0) << "Failed to open " << xml_path;
@@ -174,9 +170,8 @@ TEST_F(PerformanceBenchmark, AppStreamParserStreamingMode) {
   auto xml_path = createTempFile(generateXML(COMPONENT_COUNT));
 
   {
-    BenchmarkTimer timer(
-        "AppStreamParser (streaming): Parse " + std::to_string(COMPONENT_COUNT) +
-        " components");
+    BenchmarkTimer timer("AppStreamParser (streaming): Parse " + std::to_string(COMPONENT_COUNT) +
+                         " components");
 
     MockSink sink;
     auto result = AppStreamParser::parseToSink(xml_path, "en", sink);
@@ -218,8 +213,7 @@ TEST_F(PerformanceBenchmark, SqliteWriterBatchCommit) {
   auto xml_path = createTempFile(generateXML(COMPONENT_COUNT));
 
   {
-    BenchmarkTimer timer("SqliteWriter: Write " +
-                         std::to_string(COMPONENT_COUNT) +
+    BenchmarkTimer timer("SqliteWriter: Write " + std::to_string(COMPONENT_COUNT) +
                          " components to SQLite");
 
     {
@@ -245,8 +239,8 @@ TEST_F(PerformanceBenchmark, EndToEndParsing) {
   auto db_path = createTempDB();
 
   {
-    BenchmarkTimer timer("End-to-end: Parse XML to SQLite (" +
-                         std::to_string(COMPONENT_COUNT) + " components)");
+    BenchmarkTimer timer("End-to-end: Parse XML to SQLite (" + std::to_string(COMPONENT_COUNT) +
+                         " components)");
 
     {
       SqliteWriter writer(db_path);
@@ -274,8 +268,7 @@ TEST_F(PerformanceBenchmark, StressTestLargeDataset) {
   auto db_path = createTempDB();
 
   {
-    BenchmarkTimer timer("Stress test: " + std::to_string(LARGE_COMPONENT_COUNT) +
-                         " components");
+    BenchmarkTimer timer("Stress test: " + std::to_string(LARGE_COMPONENT_COUNT) + " components");
 
     {
       SqliteWriter writer(db_path);
@@ -285,10 +278,8 @@ TEST_F(PerformanceBenchmark, StressTestLargeDataset) {
     }
 
     auto file_size = fs::file_size(db_path);
-    std::cout << "   Final database size: " << file_size << " bytes"
-              << std::endl;
-    std::cout << "   Avg bytes/component: " << (file_size / LARGE_COMPONENT_COUNT)
-              << std::endl;
+    std::cout << "   Final database size: " << file_size << " bytes" << std::endl;
+    std::cout << "   Avg bytes/component: " << (file_size / LARGE_COMPONENT_COUNT) << std::endl;
   }
 
   cleanupFile(xml_path);
@@ -314,8 +305,8 @@ TEST_F(PerformanceBenchmark, StringPoolMemoryEfficiency) {
 
     // Verify deduplication: should only have ~UNIQUE_STRINGS unique strings
     EXPECT_LE(pool.size(), UNIQUE_STRINGS + 10);
-    std::cout << "   Interned " << ITERATIONS << " strings into "
-              << pool.size() << " unique entries" << std::endl;
+    std::cout << "   Interned " << ITERATIONS << " strings into " << pool.size()
+              << " unique entries" << std::endl;
   }
 }
 
