@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 Joel Winarske <joel.winarske@gmail.com>
 // Integration tests for AppStreamParser — both streaming (parseToSink) and
 // in-memory (create) modes.
+#include <limits>
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <set>
@@ -375,3 +376,74 @@ TEST(AppStreamParserCreate, MoveAssignment) {
     EXPECT_EQ(p1.getTotalComponentCount(), 3u);
 }
 
+
+// ── Numeric overflow on untrusted attribute values ─────────────────────────
+//
+// Attribute values come from a catalog downloaded over the network. The digit
+// accumulators used to compute `result * 10 + digit` without a bound, so a
+// long enough run of digits overflowed. Signed overflow is undefined
+// behavior, and UBSan fired on both of the inputs below. Accumulation now
+// saturates, so these must parse cleanly and clamp.
+
+TEST(AppStreamParserOverflow, OversizedTimestampDoesNotOverflow) {
+    TempFile f(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+<components>
+  <component type="desktop-application">
+    <id>com.example.Overflow</id>
+    <name>Overflow</name>
+    <releases>
+      <release version="1" timestamp="99999999999999999999999999"/>
+    </releases>
+  </component>
+</components>)xml");
+    VectorSink sink;
+    const auto r = AppStreamParser::parseToSink(f.str(), "", sink);
+    ASSERT_TRUE(r.has_value());
+    ASSERT_EQ(sink.components.size(), 1u);
+    ASSERT_EQ(sink.components[0].releases.size(), 1u);
+    // A saturated epoch is not representable as a time_t, so gmtime_r fails
+    // and the timestamp is reported as absent rather than as 1900-01-01.
+    const auto& ts = sink.components[0].releases[0].timestamp;
+    EXPECT_TRUE(ts.empty() || ts.find("1900-01-01") == std::string::npos);
+}
+
+TEST(AppStreamParserOverflow, OversizedDimensionsClampInsteadOfWrapping) {
+    TempFile f(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+<components>
+  <component type="desktop-application">
+    <id>com.example.Overflow</id>
+    <name>Overflow</name>
+    <icon type="cached" width="99999999999999" height="7">a.png</icon>
+  </component>
+</components>)xml");
+    VectorSink sink;
+    const auto r = AppStreamParser::parseToSink(f.str(), "", sink);
+    ASSERT_TRUE(r.has_value());
+    ASSERT_EQ(sink.components.size(), 1u);
+    ASSERT_FALSE(sink.components[0].icons.empty());
+    const auto& icon = sink.components[0].icons[0];
+    EXPECT_EQ(icon.width, std::numeric_limits<int>::max());
+    EXPECT_EQ(icon.height, 7);
+}
+
+TEST(AppStreamParserOverflow, NormalNumericValuesStillParse) {
+    TempFile f(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+<components>
+  <component type="desktop-application">
+    <id>com.example.Normal</id>
+    <name>Normal</name>
+    <icon type="cached" width="128" height="64">a.png</icon>
+    <releases>
+      <release version="1" timestamp="1700000000"/>
+    </releases>
+  </component>
+</components>)xml");
+    VectorSink sink;
+    ASSERT_TRUE(AppStreamParser::parseToSink(f.str(), "", sink).has_value());
+    ASSERT_FALSE(sink.components[0].icons.empty());
+    EXPECT_EQ(sink.components[0].icons[0].width, 128);
+    EXPECT_EQ(sink.components[0].icons[0].height, 64);
+    ASSERT_EQ(sink.components[0].releases.size(), 1u);
+    // 1700000000 == 2023-11-14T22:13:20Z
+    EXPECT_EQ(sink.components[0].releases[0].timestamp, "2023-11-14T22:13:20Z");
+}

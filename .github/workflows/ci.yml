@@ -79,24 +79,23 @@ jobs:
 
   clang-tidy:
     runs-on: ubuntu-latest
-    # The native CMake build is normally driven by hook/build.dart.
-    # Reproducing the full configure here is straightforward, but
-    # diagnostics from third-party headers can be noisy, so this job is
-    # advisory only.
-    continue-on-error: true
+    # No longer advisory. This job was continue-on-error because an
+    # unpinned clang-tidy produced results that varied by runner image —
+    # including a bugprone-use-after-move false positive on the documented
+    # way to restore a moved-from object. scripts/tidy.sh pins the version,
+    # which made the job deterministic and clean, so it can now block. It
+    # earns that: the pinned checker found an unchecked gmtime_r return that
+    # the previously installed version was too degraded to reach.
     steps:
       - uses: actions/checkout@v4
+      # No clang-tidy from apt: scripts/tidy.sh provisions the pinned
+      # version via pip, so this job and a local run agree.
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang-tidy cmake ninja-build libsqlite3-dev pkg-config
-      - name: Generate compile_commands.json
-        run: scripts/configure.sh --tests OFF --compile-commands
+          sudo apt-get install -y cmake ninja-build libsqlite3-dev pkg-config
       - name: Run clang-tidy
-        run: |
-          find src -type f \( -name '*.cpp' -o -name '*.hpp' \) \
-            -not -name 'dart_api_dl*' \
-            -print0 | xargs -0 clang-tidy -p build --extra-arg=-std=c++23
+        run: scripts/tidy.sh
 
   cxx-tests:
     runs-on: ubuntu-latest
