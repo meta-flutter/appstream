@@ -32,7 +32,7 @@ DART_SDK_VERSION="${DART_SDK_VERSION:-3.13.0}"
 # Vendored and third-party headers are excluded: dart_api_dl* and
 # dart_api_types* come from the Dart SDK, expected_polyfill* and spdlog* are
 # upstream copies. Reformatting them would churn on every vendor update.
-CXX_DIRS=(src include)
+CXX_DIRS=(src include native_tests)
 CXX_EXCLUDES=(dart_api_dl dart_api_types expected_polyfill spdlog)
 
 # ── Dart sources to format ─────────────────────────────────────────────────

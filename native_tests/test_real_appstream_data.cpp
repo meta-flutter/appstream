@@ -206,9 +206,7 @@ public:
 
   std::expected<void, Error> end() override { return {}; }
 
-  [[nodiscard]] size_t componentCount() const override {
-    return components.size();
-  }
+  [[nodiscard]] size_t componentCount() const override { return components.size(); }
 };
 
 TEST_F(RealAppstreamTest, ParseRealWorldSample) {
@@ -283,9 +281,8 @@ TEST_F(RealAppstreamTest, ComponentCategories) {
   EXPECT_TRUE(result.has_value());
 
   // Verify categories are parsed
-  auto nautilus = std::find_if(
-      sink.components.begin(), sink.components.end(),
-      [](const Component &c) { return c.id == "org.gnome.Nautilus"; });
+  auto nautilus = std::find_if(sink.components.begin(), sink.components.end(),
+                               [](const Component &c) { return c.id == "org.gnome.Nautilus"; });
 
   EXPECT_NE(nautilus, sink.components.end());
   EXPECT_GE(nautilus->categories.size(), 2);
@@ -302,9 +299,8 @@ TEST_F(RealAppstreamTest, URLs) {
   EXPECT_TRUE(result.has_value());
 
   // Verify URLs are parsed
-  auto firefox = std::find_if(
-      sink.components.begin(), sink.components.end(),
-      [](const Component &c) { return c.id == "org.mozilla.firefox"; });
+  auto firefox = std::find_if(sink.components.begin(), sink.components.end(),
+                              [](const Component &c) { return c.id == "org.mozilla.firefox"; });
 
   EXPECT_NE(firefox, sink.components.end());
   EXPECT_FALSE(firefox->urls.empty());
@@ -322,10 +318,8 @@ TEST_F(RealAppstreamTest, MultiLanguageSupport) {
     MockSink sink;
     auto result = AppStreamParser::parseToSink(xml_path, lang, sink);
 
-    EXPECT_TRUE(result.has_value())
-        << "Failed to parse with language: " << lang;
-    EXPECT_GT(sink.componentCount(), 0)
-        << "No components for language: " << lang;
+    EXPECT_TRUE(result.has_value()) << "Failed to parse with language: " << lang;
+    EXPECT_GT(sink.componentCount(), 0) << "No components for language: " << lang;
   }
 
   cleanupFile(xml_path);
@@ -388,17 +382,20 @@ TEST_F(RealAppstreamTest, LargeRealWorldDataset) {
   <component type="desktop">
     <id>org.test.app)"
        << i << R"(</id>
-    <name>Test Application )" << i << R"(</name>
-    <summary>A test application for benchmarking )" << i << R"(</summary>
+    <name>Test Application )"
+       << i << R"(</name>
+    <summary>A test application for benchmarking )"
+       << i << R"(</summary>
     <description>
-      <p>This is test application number )" << i
-       << R"(.</p>
+      <p>This is test application number )"
+       << i << R"(.</p>
     </description>
     <categories>
       <category>Utility</category>
       <category>System</category>
     </categories>
-    <url type="homepage">https://example.com/)" << i << R"(</url>
+    <url type="homepage">https://example.com/)"
+       << i << R"(</url>
   </component>)";
   }
 
@@ -415,4 +412,3 @@ TEST_F(RealAppstreamTest, LargeRealWorldDataset) {
 
   cleanupFile(xml_path);
 }
-
