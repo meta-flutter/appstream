@@ -21,14 +21,12 @@ bool _initNative() {
 final _nativeReady = _initNative();
 
 void main() {
-  test(
-    'parseToSqlite falls back when isolate spawn fails',
-    () async {
-      final tempDir = await Directory.systemTemp.createTemp('appstream_test_');
-      final xmlPath = '${tempDir.path}/appstream.xml';
-      final dbPath = '${tempDir.path}/catalog.db';
+  test('parseToSqlite falls back when isolate spawn fails', () async {
+    final tempDir = await Directory.systemTemp.createTemp('appstream_test_');
+    final xmlPath = '${tempDir.path}/appstream.xml';
+    final dbPath = '${tempDir.path}/catalog.db';
 
-      const xml = '''<?xml version="1.0" encoding="UTF-8"?>
+    const xml = '''<?xml version="1.0" encoding="UTF-8"?>
 <components>
   <component type="desktop-application">
     <id>com.example.Test</id>
@@ -38,42 +36,40 @@ void main() {
 </components>
 ''';
 
-      try {
-        await File(xmlPath).writeAsString(xml);
+    try {
+      await File(xmlPath).writeAsString(xml);
 
-        final events = await Appstream.parseToSqlite(
-          xmlPath: xmlPath,
-          dbPath: dbPath,
-          workerSpawner:
-              (
-                void Function(Map<String, Object>) _,
-                Map<String, Object> _,
-              ) async {
-                throw StateError('forced spawn failure');
-              },
-        ).toList().timeout(const Duration(seconds: 30));
+      final events = await Appstream.parseToSqlite(
+        xmlPath: xmlPath,
+        dbPath: dbPath,
+        workerSpawner:
+            (
+              void Function(Map<String, Object>) _,
+              Map<String, Object> _,
+            ) async {
+              throw StateError('forced spawn failure');
+            },
+      ).toList().timeout(const Duration(seconds: 30));
 
-        final failures = events.whereType<ParseFailed>().toList();
-        expect(
-          failures,
-          isEmpty,
-          reason: 'Fallback worker should complete parse without failures',
-        );
+      final failures = events.whereType<ParseFailed>().toList();
+      expect(
+        failures,
+        isEmpty,
+        reason: 'Fallback worker should complete parse without failures',
+      );
 
-        final done = events.whereType<ParseDone>().toList();
-        expect(done, hasLength(1));
-        expect(done.single.count, greaterThanOrEqualTo(1));
+      final done = events.whereType<ParseDone>().toList();
+      expect(done, hasLength(1));
+      expect(done.single.count, greaterThanOrEqualTo(1));
 
-        expect(File(dbPath).existsSync(), isTrue);
-        expect(File(dbPath).lengthSync(), greaterThan(0));
-      } finally {
-        if (tempDir.existsSync()) {
-          await tempDir.delete(recursive: true);
-        }
+      expect(File(dbPath).existsSync(), isTrue);
+      expect(File(dbPath).lengthSync(), greaterThan(0));
+    } finally {
+      if (tempDir.existsSync()) {
+        await tempDir.delete(recursive: true);
       }
-    },
-    skip: _nativeReady ? null : 'native library not available',
-  );
+    }
+  }, skip: _nativeReady ? null : 'native library not available');
 
   test(
     'parseToSqlite emits ParseFailed or empty ParseDone on loosely-malformed XML',
