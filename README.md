@@ -41,7 +41,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  appstream_dart: ^0.2.2
+  appstream_dart: ^0.4.1
 ```
 
 The first `dart pub get` triggers `hook/build.dart`, which drives CMake
@@ -53,8 +53,8 @@ and benchmark configurations.
 ## Quick Facts
 
 - **Language**: C++23 (backend) + Dart (frontend) + C (Dart API)
-- **Status**: Production-Ready (v0.2.2)
-- **Tests**: 185/185 passing (140 C++ + 45 Dart)
+- **Status**: Production-Ready (v0.4.1)
+- **Tests**: 194/194 passing (149 C++ + 45 Dart)
 - **Peak Memory**: ~22 MB (streaming parser with 256 KB sliding buffer)
 
 ## Features
@@ -80,7 +80,7 @@ and benchmark configurations.
   - Keyboard navigation (Escape to go back, arrow keys in image viewer)
 
 ### Infrastructure
-- **Automated CI/CD** - GitHub Actions with 8+ configurations
+- **Automated CI/CD** - GitHub Actions, 9 jobs including a Debug/Release x asan/ubsan matrix
 - **Code Coverage** - gcov/lcov integration + Codecov
 - **Memory Safety** - AddressSanitizer, UBSan support
 - **Security Hardening** - URI scheme validation, FTS5 query sanitization, XML integrity checks, SQLITE_TRANSIENT bindings, numeric entity overflow protection
@@ -89,7 +89,7 @@ and benchmark configurations.
 ## Project Structure
 
 ```
-appstream/
+appstream_dart/
 ├── src/                          # C++ source
 │   ├── AppStreamParser.cpp       # XML parsing state machine + translation capture
 │   ├── XmlScanner.cpp            # XML tokenizer (buffer + streaming fd modes)
@@ -97,12 +97,12 @@ appstream/
 │   ├── SqliteWriter.cpp          # Batched SQLite writer with staging
 │   ├── StringPool.cpp            # String interning
 │   ├── appstream_ffi.cpp         # Dart FFI bridge + DartNotifySink
-│   └── dart_api_dl.c             # Dart API DL initialization
+│   └── dart_api_dl.cpp           # Dart API DL initialization (vendored)
 ├── include/                      # C++ headers
 ├── lib/                          # Dart package
 │   ├── appstream.dart            # Public API + exports
 │   └── src/
-│       ├── bindings.dart         # FFI bindings + library loading
+│       ├── bindings.dart         # @Native FFI bindings (native-asset resolved)
 │       └── database/
 │           ├── database.dart     # CatalogDatabase (Drift ORM, locale-aware queries)
 │           ├── tables.dart       # 20 Drift table definitions
@@ -119,8 +119,9 @@ appstream/
 │       │   └── widgets/          # AppCard, AppIcon
 │       └── linux/                # Linux desktop build (bundles libappstream.so)
 ├── test/                         # Dart tests
-├── native_tests/                        # C++ tests (GoogleTest)
-├── doc/                         # Documentation
+├── native_tests/                 # C++ tests (GoogleTest)
+├── doc/                          # Documentation
+├── scripts/                      # test.sh, format.sh (pinned toolchain)
 ├── CMakeLists.txt                # Native build (driven by hook/build.dart)
 └── pubspec.yaml                  # Dart dependencies
 ```
@@ -128,7 +129,7 @@ appstream/
 ## Quick Start
 
 ### Prerequisites
-- C++23 compatible compiler (GCC 13+, Clang 17+)
+- C++23 compatible compiler (GCC 13+, Clang 18+)
 - CMake ≥ 3.22 (Ninja optional but recommended)
 - Dart SDK 3.10+
 - SQLite3 development libraries
