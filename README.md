@@ -176,18 +176,46 @@ flutter run -d linux
 
 ### Build & Test (Full)
 
+The C++ suite is opt-in. Without `-DAPPSTREAM_BUILD_TESTS=ON` the test
+targets are never configured and `ctest` reports no tests to run, so the
+flag is required in every command below.
+
 ```bash
-# Default build with tests
-cmake -S . -B build && cmake --build build
-cd build && ctest
+# Build with tests
+cmake -S . -B build -DAPPSTREAM_BUILD_TESTS=ON && cmake --build build
+ctest --test-dir build --output-on-failure
 
 # With sanitizers
-cmake -S . -B build -DENABLE_SANITIZER=asan
-cmake --build build && cd build && ctest
+cmake -S . -B build -DAPPSTREAM_BUILD_TESTS=ON -DENABLE_SANITIZER=asan
+cmake --build build && ctest --test-dir build --output-on-failure
 
 # Dart tests
 dart test
+
+# Everything at once (C++ then Dart)
+./scripts/test.sh
 ```
+
+### Formatting
+
+```bash
+./scripts/format.sh            # apply formatting
+./scripts/format.sh --check    # verify only, as CI does
+```
+
+Formatter output is version-sensitive: clang-format 18 and 22 disagree
+about constructs this codebase uses, and Dart 3.13 collapses some call
+arguments differently than 3.12. Running the formatter straight off your
+`$PATH` can therefore produce a tree that passes locally and fails CI.
+
+`scripts/format.sh` pins both tools and downloads a matching clang-format
+and Dart SDK into `.cache/` when your installed versions differ, so it
+reaches the same verdict as CI on any machine. CI runs this same script,
+and the list of files to format lives in it rather than being duplicated
+into the workflow.
+
+Run `clang-tidy` *before* formatting, never after — it reports line numbers
+against the unformatted tree.
 
 ## Multi-Language Support
 

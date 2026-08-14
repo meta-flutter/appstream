@@ -6,18 +6,33 @@ on:
   pull_request:
     branches: [main]
 
+# Formatter output is version-sensitive, so every job that gates on
+# formatting pins its toolchain rather than tracking `stable`. Jobs that
+# only build, analyze, or test still float, so genuine breakage against new
+# SDKs surfaces here rather than in a user's project.
+env:
+  DART_SDK_VERSION: '3.13.0'
+  FLUTTER_VERSION: '3.47.0'
+
 jobs:
   format:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Pinned, not `stable`. dart format output changes between SDK
+      # releases (3.13 collapses some call arguments differently than
+      # 3.12), so a floating SDK turns this job red on an unrelated commit
+      # the day a new stable ships. Keep in sync with DART_SDK_VERSION in
+      # scripts/format.sh.
       - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: ${{ env.DART_SDK_VERSION }}
       - run: dart pub get
-      # The Flutter sub-package under example/flathub_catalog/ is formatted
-      # in the flutter-flathub-catalog job below (its formatting tracks the
-      # Flutter SDK's bundled dart format, which can differ from the
-      # standalone Dart SDK used here).
-      - run: dart format --output=none --set-exit-if-changed lib test hook bin example/example.dart
+      # The file list lives in scripts/format.sh so developers and CI check
+      # exactly the same set. The Flutter sub-package under
+      # example/flathub_catalog/ is excluded there and covered by the
+      # flutter-flathub-catalog job below instead.
+      - run: scripts/format.sh --check --dart
 
   analyze:
     runs-on: ubuntu-latest
@@ -53,18 +68,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install clang-format
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang-format
+      # No apt install of clang-format here: the runner image's version
+      # tracks the Ubuntu release and changes underneath us, and versions
+      # disagree on real constructs (18 and 22 format `struct stat sb {}`
+      # differently, and 22 flags its own output under --dry-run --Werror).
+      # scripts/format.sh provisions the pinned version via pip so a local
+      # run and this job reach the same verdict.
       - name: Check formatting
-        run: |
-          find src include tests -type f \( -name '*.cpp' -o -name '*.hpp' -o -name '*.h' -o -name '*.c' \) \
-            -not -name 'dart_api_dl*' \
-            -not -name 'dart_api_types*' \
-            -not -name 'expected_polyfill*' \
-            -not -name 'spdlog*' \
-            -print0 | xargs -0 clang-format --dry-run --Werror
+        run: scripts/format.sh --check --cxx
 
   clang-tidy:
     runs-on: ubuntu-latest
@@ -125,8 +136,12 @@ jobs:
         working-directory: example/flathub_catalog
     steps:
       - uses: actions/checkout@v4
+      # Pinned for the same reason as the format job: this job runs
+      # `dart format` with the Flutter SDK's bundled formatter, so a
+      # floating channel makes formatting a moving target.
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
       - name: Install native dependencies
         run: |
