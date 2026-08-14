@@ -1,3 +1,28 @@
+## 0.4.1
+
+- Restore Flutter compatibility, which 0.4.0 broke. `hooks` ^2.1.0 requires
+  `meta` ^1.19.0, but `flutter_test` from the Flutter SDK pins `meta` 1.18.0
+  on 3.44.x, so *any* Flutter app failed version solving against
+  appstream_dart 0.4.0 — the bundled example included. The constraints are
+  now `hooks: '>=1.0.2 <3.0.0'` and `code_assets: '>=1.0.0 <2.0.0'`, which
+  resolve to 2.1.0/1.2.1 standalone and to 1.0.2/1.0.0 under an older
+  Flutter. The build hook is source-compatible with both majors.
+- Bind the native symbols as `@Native` externals against `@DefaultAsset`
+  instead of resolving them through `DynamicLibrary.open`. `hook/build.dart`
+  already emitted the library as a code asset, but the VM consults its asset
+  table only for `@Native` declarations, so that asset was built and then
+  never used; the loader compensated with a seven-step search. The public
+  API is unchanged.
+- Remove that search chain (~180 lines): a `/proc/self/maps` scan, a glob
+  through `.dart_tool/hooks_runner/` internals, and candidate paths derived
+  from `Platform.script`, the executable, and the current directory. The
+  last of those made the process load `libappstream.so` from a
+  CWD-relative `lib/`, `build/`, or `src/build/` directory, so running an
+  application from a directory an attacker could write to was enough to get
+  a library of their choosing loaded.
+- Correct the comments in `hook/build.dart` and `lib/src/appstream_native.dart`,
+  which described the `@Native` mechanism that did not yet exist.
+
 ## 0.4.0
 
 - **Breaking (dependency resolution):** `hooks` ^1.0.2 → ^2.1.0 and

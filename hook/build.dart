@@ -5,8 +5,10 @@
 //
 // Drives the project's CMake build to compile libappstream.so, then
 // declares the resulting shared library as a CodeAsset under the asset id
-// `package:appstream_dart/src/appstream_native.dart`. The @Native bindings
-// in lib/src/bindings.dart resolve symbols against that asset at runtime.
+// `package:appstream_dart/src/appstream_native.dart`. The @Native externals
+// in lib/src/bindings.dart name that same id in their @DefaultAsset, which
+// is what lets the VM resolve their symbols. Changing the asset name below
+// without changing that annotation breaks loading at the first call.
 //
 // Patterned after https://github.com/jwinarske/pw_dart/blob/main/hook/build.dart
 

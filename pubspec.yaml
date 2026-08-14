@@ -2,7 +2,7 @@ name: appstream_dart
 description: >-
   High-performance AppStream XML parser with C++23 FFI bridge.
   Streams catalog metadata into SQLite with Drift ORM and FTS5 search.
-version: 0.4.0
+version: 0.4.1
 repository: https://github.com/flatpak-minimal/appstream_dart
 issue_tracker: https://github.com/flatpak-minimal/appstream_dart/issues
 topics:
@@ -27,9 +27,9 @@ environment:
 
 dependencies:
   drift: ^2.22.0
-  code_assets: ^1.2.1
+  code_assets: '>=1.0.0 <2.0.0'
   ffi: ^2.1.0
-  hooks: ^2.1.0
+  hooks: '>=1.0.2 <3.0.0'
   http: ^1.2.0
   path: ^1.9.0
   sqlite3: ^3.3.1
