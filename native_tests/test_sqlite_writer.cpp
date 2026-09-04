@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 Joel Winarske <joel.winarske@gmail.com>
 // Unit / integration tests for SqliteWriter.
 // Each test writes to a unique temp DB path.
+#include <cstdint>
 #include <gtest/gtest.h>
 #include <filesystem>
 #include <sqlite3.h>

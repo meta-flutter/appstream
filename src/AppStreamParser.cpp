@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <ctime>
 #include <iomanip>
 #include <limits>
 #include <ranges>

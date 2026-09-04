@@ -5,6 +5,7 @@
 #define SQLITEWRITER_H
 
 #include "ComponentSink.h"
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 

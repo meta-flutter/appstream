@@ -8,6 +8,7 @@
 #include "SqliteWriter.h"
 #include "spdlog.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <string>
