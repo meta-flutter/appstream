@@ -3,6 +3,7 @@
 
 #include "SqliteWriter.h"
 #include "../include/spdlog.h"
+#include <cstdint>
 #include <cstdio>
 #include <sqlite3.h>
 #include <string>
